@@ -6,9 +6,9 @@ require_once('IO/Bit.php');
 // MS-Dos Date Time http://www.vsft.com/hal/dostime.htm
 
 class IO_Zip {
-    var $headerList = null;
+    var $chunkList = null;
     function parse($zipdata, $offset = 0) {
-                $reader = new IO_Bit();
+        $reader = new IO_Bit();
         $reader->input($zipdata);
         $reader->setOffset($offset, 0);
         /*
