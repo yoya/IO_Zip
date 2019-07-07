@@ -37,91 +37,95 @@ class IO_Zip {
         $done = false;
         while (true) {
             $signature = $reader->getData(4);
+            $chunk = ['Signature' => $signature];
             switch ($signature) {
               case "PK\x03\x04": // A. Local file header
-                $header = array();
-                $header['Signature'] = $signature;
-                $header['VersionNeeded'] = $reader->getUI16LE();
-                $header['GeneralFlag'] = $reader->getUI16LE();
-                $header['CompressionMethod'] = $reader->getUI16LE();
-                $header['LastModTime'] = $this->getDosTime($reader);
-                $header['LastModDate'] = $this->getDosDate($reader);
-                $header['CRC32'] = $reader->getUI32LE();
-                $header['CompressSize'] = $reader->getUI32LE();
-                $header['UncompressSize'] = $reader->getUI32LE();
-                $header['FileNameLen'] = $reader->getUI16LE();
-                $header['ExtraLen'] = $reader->getUI16LE();
-                if ($header['FileNameLen']) {
-                    $header['FileName'] = $reader->getData($header['FileNameLen']);
+                $chunk['VersionNeeded'] = $reader->getUI16LE();
+                $chunk['GeneralFlag'] = $reader->getUI16LE();
+                $chunk['CompressionMethod'] = $reader->getUI16LE();
+                $chunk['LastModTime'] = $this->getDosTime($reader);
+                $chunk['LastModDate'] = $this->getDosDate($reader);
+                $chunk['CRC32'] = $reader->getUI32LE();
+                $chunk['CompressSize'] = $reader->getUI32LE();
+                $chunk['UncompressSize'] = $reader->getUI32LE();
+                $chunk['FileNameLen'] = $reader->getUI16LE();
+                $chunk['ExtraLen'] = $reader->getUI16LE();
+                if ($chunk['FileNameLen']) {
+                    $chunk['FileName'] = $reader->getData($chunk['FileNameLen']);
                 }
-                if ($header['ExtraLen']) {
-                    $header['Extra'] = $reader->getData($header['ExtraLen']);
+                if ($chunk['ExtraLen']) {
+                    $chunk['Extra'] = $reader->getData($chunk['ExtraLen']);
                 }
-                if ($header['CompressSize']) {
+                if ($chunk['CompressSize']) {
                     // B. File data
-                    // $this->chunkList []= $reader->getData($header['CompressSize']);
-                    $reader->incrementOffset($header['CompressSize'], 0);
+                    // $this->chunkList []= $reader->getData($chunk['CompressSize']);
+                    $reader->incrementOffset($chunk['CompressSize'], 0);
                 }
                 break;
               case "PK\x06\x08": // E. Archive extra data record
-                $data = array();
-                $data['Signature'] = $signature;
-                $data['ExtraFieldLength'] = $reader->getUI32LE();
-                if ($data['ExtraFieldLength']) {
-                    $data['ExtraFieldData'] = $reader->getData($data['ExtraFieldLength']);
+                  $chunk['ExtraFieldLength'] = $reader->getUI32LE();
+                  if ($chunk['ExtraFieldLength']) {
+                    $chunk['ExtraFieldData'] = $reader->getData($chunk['ExtraFieldLength']);
                 }
                 break;
               case "PK\x01\x02": // F. Central directory structure
-                $header = array();
-                $header['Signature'] = $signature;
-                $header['VersionMadeBy'] = $reader->getUI16LE();
-                $header['VersionNeeded'] = $reader->getUI16LE();
-                $header['GeneralFlag'] = $reader->getUI16LE();
-                $header['CompressionMethod'] = $reader->getUI16LE();
-                $header['LastModTime'] = $this->getDosTime($reader);
-                $header['LastModDate'] = $this->getDosDate($reader);
-                $header['CRC32'] = $reader->getUI32LE();
-                $header['CompressSize'] = $reader->getUI32LE();
-                $header['UncompressSize'] = $reader->getUI32LE();
-                $header['FileNameLen'] = $reader->getUI16LE();
-                $header['ExtraLen'] = $reader->getUI16LE();
-                $header['FileCommentLen'] = $reader->getUI16LE();
-                $header['DiskNumberStart'] = $reader->getUI16LE();
-                $header['InternalFileAttr'] = $reader->getUI16LE();
-                $header['ExternalFileAttr'] = $reader->getUI32LE();
-                $header['RelativeOffsetOfLocalHeader'] = $reader->getUI32LE();
-                if ($header['FileNameLen']) {
-                    $header['FileName'] = $reader->getData($header['FileNameLen']);
+                $chunk['VersionMadeBy'] = $reader->getUI16LE();
+                $chunk['VersionNeeded'] = $reader->getUI16LE();
+                $chunk['GeneralFlag'] = $reader->getUI16LE();
+                $chunk['CompressionMethod'] = $reader->getUI16LE();
+                $chunk['LastModTime'] = $this->getDosTime($reader);
+                $chunk['LastModDate'] = $this->getDosDate($reader);
+                $chunk['CRC32'] = $reader->getUI32LE();
+                $chunk['CompressSize'] = $reader->getUI32LE();
+                $chunk['UncompressSize'] = $reader->getUI32LE();
+                $chunk['FileNameLen'] = $reader->getUI16LE();
+                $chunk['ExtraLen'] = $reader->getUI16LE();
+                $chunk['FileCommentLen'] = $reader->getUI16LE();
+                $chunk['DiskNumberStart'] = $reader->getUI16LE();
+                $chunk['InternalFileAttr'] = $reader->getUI16LE();
+                $chunk['ExternalFileAttr'] = $reader->getUI32LE();
+                $chunk['RelativeOffsetOfLocalHeader'] = $reader->getUI32LE();
+                if ($chunk['FileNameLen']) {
+                    $chunk['FileName'] = $reader->getData($chunk['FileNameLen']);
                 }
-                if ($header['ExtraLen']) {
-                    $header['Extra'] = $reader->getData($header['ExtraLen']);
+                if ($chunk['ExtraLen']) {
+                    $chunk['Extra'] = $reader->getData($chunk['ExtraLen']);
                 }
-                if ($header['FileCommentLen']) {
-                    $header['FileComment'] = $reader->getData($header['FileCommentLen']);
+                if ($chunk['FileCommentLen']) {
+                    $chunk['FileComment'] = $reader->getData($chunk['FileCommentLen']);
                 }
-                if ($header['CompressSize']) {
+                if ($chunk['CompressSize']) {
                     // nothing to do
                 }
                 break;
               case "PK\x05\x05": // Digital signature
-                $header = array();
-                $header['Signature'] = $signature;
-                $header['SizeOfData'] = $reader->getUI16LE();
-                if ($header['SizeOfData']) {
-                    $header['SignatureData'] = $reader->getData();
+                $chunk['SizeOfData'] = $reader->getUI16LE();
+                if ($chunk['SizeOfData']) {
+                    $chunk['SignatureData'] = $reader->getData();
                 }
                 break;
             case "PK\x05\x06": // I. End of central directory record
+                $chunk['NumOfDisk'] = $reader->getUI16LE();
+                $chunk['NumOfDiskWithStartCentralDirectory'] = $reader->getUI16LE();
+                $chunk['TotalNumOfEntriesOnDisk'] = $reader->getUI16LE();
+                $chunk['TotalNumOfEntries'] = $reader->getUI16LE();
+                $chunk['SizeOfCentralDirectory'] = $reader->getUI32LE();
+                $chunk['StartOffsetCentralDirectory'] = $reader->getUI32LE();
+                $chunk['ZIPCommentLen'] = $reader->getUI16LE();
+                if ($chunk['ZIPCommentLen']) {
+                    $chunk['ZIPComment'] = $reader->getData($chunk['ZipCommentLen']);
+                }
+                $done = true;
+                break ;
+                
             case "PK\x06\x06": // G. Zip64 end of central directory record
             case "PK\x06\x07": // H. Zip64 end of central directory locator
-                $done = true;
-                break;
             default:
                 echo "Unknown: ".bin2hex($signature)." :$signature\n";
                 $done = true;
                 break ;
             }
-            $this->chunkList []= $header;
+            $this->chunkList []= $chunk;
             if ($done) {
                 break;
             }
