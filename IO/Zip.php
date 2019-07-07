@@ -146,9 +146,16 @@ class IO_Zip {
         return array('Year' => $year, 'Month' => $month, 'Day' => $day);
     }
     function dump($opt = array()) {
+        $sigCountTable = [];
         foreach ($this->chunkList as $chunk) {
             $sig = $chunk["Signature"];
-            echo self::signatureName($sig).PHP_EOL;
+            if (isset($this->sigCountTable[$sig])) {
+                $this->sigCountTable[$sig] += 1;
+            } else {
+                $this->sigCountTable[$sig] = 1;
+            }
+            $sigCount = $this->sigCountTable[$sig];
+            echo self::signatureName($sig)." #".$sigCount.PHP_EOL;
             foreach ($chunk as $key => $value) {
                 if (is_array($value)) {
                     $value = implode(",", $value);
