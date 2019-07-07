@@ -1,12 +1,31 @@
 <?php
 
-require_once('IO/Bit.php');
+if (is_readable('vendor/autoload.php')) {
+    require 'vendor/autoload.php';
+} else {
+    require_once('IO/Bit.php');
+}
 
 // http://www.pkware.com/documents/casestudies/APPNOTE.TXT
 // MS-Dos Date Time http://www.vsft.com/hal/dostime.htm
 
 class IO_Zip {
     var $chunkList = null;
+    static function signatureName($sig) {
+        static $signatureTable = [
+            "PK\x03\x04" => "Local file header",
+            "PK\x06\x08" => "Archive extra data record",
+            "PK\x01\x02" => "Central directory structure",
+            "PK\x05\x05" => "Digital signature",
+            "PK\x05\x06" => "End of central directory record",
+            "PK\x06\x06" => "Zip64 end of central directory record",
+            "PK\x06\x07" => "Zip64 end of central directory locator",
+        ];
+        if (isset($signatureTable[$sig])) {
+            return $signatureTable[$sig];
+        }
+        return "Unknonw Signature";
+    }
     function parse($zipdata, $offset = 0) {
         $reader = new IO_Bit();
         $reader->input($zipdata);
@@ -15,6 +34,7 @@ class IO_Zip {
          * zip header info
          */
         $this->chunkList = array();
+        $done = false;
         while (true) {
             $signature = $reader->getData(4);
             switch ($signature) {
@@ -37,12 +57,11 @@ class IO_Zip {
                 if ($header['ExtraLen']) {
                     $header['Extra'] = $reader->getData($header['ExtraLen']);
                 }
-                $this->chunkList []= $header;
                 if ($header['CompressSize']) {
                     // B. File data
-                    $this->chunkList []= $reader->getData($header['CompressSize']);
+                    // $this->chunkList []= $reader->getData($header['CompressSize']);
+                    $reader->incrementOffset($header['CompressSize'], 0);
                 }
-                var_dump($header);
                 break;
               case "PK\x06\x08": // E. Archive extra data record
                 $data = array();
@@ -51,8 +70,6 @@ class IO_Zip {
                 if ($data['ExtraFieldLength']) {
                     $data['ExtraFieldData'] = $reader->getData($data['ExtraFieldLength']);
                 }
-                $this->chunkList []= $data;
-                var_dump($data);
                 break;
               case "PK\x01\x02": // F. Central directory structure
                 $header = array();
@@ -82,11 +99,9 @@ class IO_Zip {
                 if ($header['FileCommentLen']) {
                     $header['FileComment'] = $reader->getData($header['FileCommentLen']);
                 }
-                $this->chunkList []= $header;
                 if ($header['CompressSize']) {
-                    $this->chunkList []= $reader->getData($header['CompressSize']);
+                    // nothing to do
                 }
-                var_dump($header);
                 break;
               case "PK\x05\x05": // Digital signature
                 $header = array();
@@ -96,12 +111,19 @@ class IO_Zip {
                     $header['SignatureData'] = $reader->getData();
                 }
                 break;
-//            case "PK\x06\x06": // G. Zip64 end of central directory record
-//            case "PK\x06\x07": // H. Zip64 end of central directory locator
-//            case "PK\x05\x06": // I. End ofcentral directory record
-              default:
-                echo "Unknown".bin2hex($signature)." :$signature\n";
-                break 2;
+            case "PK\x05\x06": // I. End of central directory record
+            case "PK\x06\x06": // G. Zip64 end of central directory record
+            case "PK\x06\x07": // H. Zip64 end of central directory locator
+                $done = true;
+                break;
+            default:
+                echo "Unknown: ".bin2hex($signature)." :$signature\n";
+                $done = true;
+                break ;
+            }
+            $this->chunkList []= $header;
+            if ($done) {
+                break;
             }
         }
     }
@@ -119,10 +141,16 @@ class IO_Zip {
         $day   =  $dosdate & 0x1f;
         return array('Year' => $year, 'Month' => $month, 'Day' => $day);
     }
+    function dump($opt = array()) {
+        foreach ($this->chunkList as $chunk) {
+            $sig = $chunk["Signature"];
+            echo self::signatureName($sig).PHP_EOL;
+            foreach ($chunk as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(",", $value);
+                }
+                echo "  $key: $value".PHP_EOL;
+            }
+        }
+    }
 }
-
-$zipdata = file_get_contents($argv[1]);
-
-$zip = new IO_Zip();
-$zip->parse($zipdata);
-
