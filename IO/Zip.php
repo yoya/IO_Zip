@@ -61,6 +61,9 @@ class IO_Zip {
                 if ($chunk['CompressSize']) {
                     // B. File data
                     // $this->chunkList []= $reader->getData($chunk['CompressSize']);
+                    if (is_null($this->offsetOfPayload)) {
+                        $this->offsetOfPayload = $reader->getOffset()[0];
+                    }
                     $reader->incrementOffset($chunk['CompressSize'], 0);
                 }
                 break;
@@ -71,6 +74,9 @@ class IO_Zip {
                 }
                 break;
               case "PK\x01\x02": // F. Central directory structure
+                  if (is_null($this->offsetOfCentralDirectory)) {
+                      $this->offsetOfCentralDirectory = $reader->getOffset()[0] - 4;
+                  }
                 $chunk['VersionMadeBy'] = $reader->getUI16LE();
                 $chunk['VersionNeeded'] = $reader->getUI16LE();
                 $chunk['GeneralFlag'] = $reader->getUI16LE();
@@ -165,5 +171,7 @@ class IO_Zip {
                 echo "  $key: $value".PHP_EOL;
             }
         }
+        echo "OffsetPayload:{$this->offsetOfPayload}".PHP_EOL;
+        echo "OffsetCentralDirectory:{$this->offsetOfCentralDirectory}".PHP_EOL;
     }
 }
