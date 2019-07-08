@@ -67,16 +67,16 @@ class IO_Zip {
                     $reader->incrementOffset($chunk['CompressSize'], 0);
                 }
                 break;
-              case "PK\x06\x08": // E. Archive extra data record
-                  $chunk['ExtraFieldLength'] = $reader->getUI32LE();
-                  if ($chunk['ExtraFieldLength']) {
+            case "PK\x06\x08": // E. Archive extra data record
+                $chunk['ExtraFieldLength'] = $reader->getUI32LE();
+                if ($chunk['ExtraFieldLength']) {
                     $chunk['ExtraFieldData'] = $reader->getData($chunk['ExtraFieldLength']);
                 }
                 break;
-              case "PK\x01\x02": // F. Central directory structure
-                  if (is_null($this->offsetOfCentralDirectory)) {
-                      $this->offsetOfCentralDirectory = $reader->getOffset()[0] - 4;
-                  }
+            case "PK\x01\x02": // F. Central directory structure
+                if (is_null($this->offsetOfCentralDirectory)) {
+                    $this->offsetOfCentralDirectory = $reader->getOffset()[0] - 4;
+                }
                 $chunk['VersionMadeBy'] = $reader->getUI16LE();
                 $chunk['VersionNeeded'] = $reader->getUI16LE();
                 $chunk['GeneralFlag'] = $reader->getUI16LE();
@@ -106,7 +106,7 @@ class IO_Zip {
                     // nothing to do
                 }
                 break;
-              case "PK\x05\x05": // Digital signature
+            case "PK\x05\x05": // Digital signature
                 $chunk['SizeOfData'] = $reader->getUI16LE();
                 if ($chunk['SizeOfData']) {
                     $chunk['SignatureData'] = $reader->getData();
@@ -125,7 +125,6 @@ class IO_Zip {
                 }
                 $done = true;
                 break ;
-                
             case "PK\x06\x06": // G. Zip64 end of central directory record
             case "PK\x06\x07": // H. Zip64 end of central directory locator
             default:
