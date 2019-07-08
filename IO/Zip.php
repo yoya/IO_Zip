@@ -11,15 +11,17 @@ if (is_readable('vendor/autoload.php')) {
 
 class IO_Zip {
     var $chunkList = null;
+    var $offsetOfPayload = null;
+    var $offsetOfCentralDirectory = null;
     static function signatureName($sig) {
         static $signatureTable = [
-            "PK\x03\x04" => "Local file header",
-            "PK\x06\x08" => "Archive extra data record",
             "PK\x01\x02" => "Central directory structure",
+            "PK\x03\x04" => "Local file header",
             "PK\x05\x05" => "Digital signature",
             "PK\x05\x06" => "End of central directory record",
             "PK\x06\x06" => "Zip64 end of central directory record",
             "PK\x06\x07" => "Zip64 end of central directory locator",
+            "PK\x06\x08" => "Archive extra data record",
         ];
         if (isset($signatureTable[$sig])) {
             return $signatureTable[$sig];
